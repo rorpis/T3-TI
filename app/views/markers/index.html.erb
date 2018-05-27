@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+       #map {
+        height: 400px;
+        width: 100%;
+       }
+    </style>
+  </head>
+  <body>
+    <h3>Mapa vuelos</h3>
+    <div id="map"></div>
+    <script>
+      function initMap() {
+  		  var map = new google.maps.Map(document.getElementById('map'), {
+  		    zoom: 4
+  		  });
+  		  var bounds = new google.maps.LatLngBounds();
+
+        for (var i = 0; i < 1; i++) {
+          var marker = new google.maps.Marker({
+            position: {lat: parseFloat(-33.3924628), lng: parseFloat(-70.5479754)},
+            title: "Casa",
+            map: map
+          });
+          var infowindow = new google.maps.InfoWindow({
+            content: "casa!"
+          });
+          infowindow.open(map,marker);
+          bounds.extend(marker.position);
+        }
+
+		    map.fitBounds(bounds);
+		  }
+    </script>
+    <script async defer
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBvu_Ps7HdUL-KCcngd-Vo_0JW_b9pW6mk&callback=initMap">
+    </script>
+  </body>
+  <script>
+    console.log("holaa");
+  </script>
+</html>
+<script>
+    var socket = io('wss://integracion-tarea-3.herokuapp.com', { path: '/flights' });
+
+    socket.emit('AIRPORTS');
+    socket.on('AIRPORTS', function (data) {
+      console.log("print data AIRPORTS");
+      console.log(data);
+      console.log("----");
+    });
+  </script>

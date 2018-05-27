@@ -1,0 +1,12 @@
+<h3>MAPA</h3>
+<div id="map"></div>
+
+<% if false %>
+<%= javascript_tag do %>
+  var airports = <%= raw @airports.to_json %>;
+<% end %>
+<% end %>
+
+<script async defer 
+	src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBvu_Ps7HdUL-KCcngd-Vo_0JW_b9pW6mk&callback=initMap">
+</script>
