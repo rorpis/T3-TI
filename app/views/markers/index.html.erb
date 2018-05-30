@@ -1,5 +1,5 @@
 <script 
-src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBvu_Ps7HdUL-KCcngd-Vo_0JW_b9pW6mk">
+src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBvu_Ps7HdUL-KCcngd-Vo_0JW_b9pW6mk&libraries=geometry">
 </script>
 
 <html>
@@ -86,6 +86,7 @@ src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBvu_Ps7HdUL-KCcngd-Vo_0JW
 
         //socket de posicion
         socket.on('POSITION', function (data) {
+          console.log("llega posicion nueva");
           var incluye = 0;
           var j = 0;
           var avion;
@@ -103,31 +104,38 @@ src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBvu_Ps7HdUL-KCcngd-Vo_0JW
                   var vuelo_actual = vuelos[i];
               };
             };
-            if(typeof vuelo_actual == "undefined") {
-              info = "";
-            } else {
+            if (typeof vuelo_actual != "undefined") {
               var info = vuelo_actual.code + '<div> </div>' + vuelo_actual.airline + '<div> </div>' 
                 + vuelo_actual.plane + '<div> </div>' + "asientos: " + vuelo_actual.seats;
-            }
-            var Coordinates = [
-              {lat: parseFloat(data.position[0]), lng: parseFloat(data.position[1])}
-            ];
-            c(data, j, [], data.code, 1, info);
-            mapa_aviones.push(data);
+              var origen = vuelo_actual.origin;
+              var destino = vuelo_actual.destination;
+              var Coordinates = [
+                {lat: parseFloat(data.position[0]), lng: parseFloat(data.position[1])}
+              ];
+              c(data, j, [], data.code, 1, info, origen, destino);
+              mapa_aviones.push(data);
+            };
           };
           if (incluye == 1) {
-            avion[1].push({lat: parseFloat(data.position[0]), lng: parseFloat(data.position[1])});
-            c(data, j, avion[1], data.code, 0, "");
+            mapa_aviones[j][1].push({lat: parseFloat(data.position[0]), lng: parseFloat(data.position[1])});
+            c(data, j, mapa_aviones[j][1], data.code, 0, "", "", "");
           };
         });
 
         //termina socket posicion
       }
-      function c(a, j, posiciones, code, nuevo, info) {
+      function c(a, j, posiciones, code, nuevo, info, origen, destino) {
         if (nuevo == 0) {
-          //var element = mapa_aviones[j][0];
           mapa_aviones[j][0].setPosition({lat: parseFloat(a.position[0]), lng: parseFloat(a.position[1])});
-          //element.setMap(null);
+          var camino_rec = new google.maps.Polyline({
+            path: mapa_aviones[j][1],
+            geodesic: true,
+            strokeColor: "FFFF00",
+            strokeOpacity: 1.0,
+            strokeWeight: 2
+          });
+
+          camino_rec.setMap(map);
         };
         if (nuevo == 1) {
           var image = {
@@ -136,7 +144,8 @@ src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBvu_Ps7HdUL-KCcngd-Vo_0JW
             strokeOpacity: 1,
             color: 'black',
             strokeWeight: 1,
-            anchor: new google.maps.Point(400, 400)
+            anchor: new google.maps.Point(400, 400),
+            rotation: google.maps.geometry.spherical.computeHeading(new google.maps.LatLng(origen.airport_position[0], origen.airport_position[1]), new google.maps.LatLng(destino.airport_position[0], destino.airport_position[1]))
           }
           var marker = new google.maps.Marker({
             position: {lat: parseFloat(a.position[0]), lng: parseFloat(a.position[1])},
