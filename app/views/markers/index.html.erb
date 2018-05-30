@@ -1,13 +1,5 @@
-
-<script>
-    var socket = io('wss://integracion-tarea-3.herokuapp.com', { path: '/flights' });
-
-    socket.emit('AIRPORTS');
-    socket.on('AIRPORTS', function (data) {
-      console.log("print data AIRPORTS");
-      console.log(data);
-      console.log("----");
-    });
+<script 
+src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBvu_Ps7HdUL-KCcngd-Vo_0JW_b9pW6mk">
 </script>
 
 <html>
@@ -15,16 +7,21 @@
     <h3>Mapa vuelos - Tarea 3 Rodrigo Orpis</h3>
     <div id="map"></div>
     <script type="text/javascript">
+      var aereopuertos = [];
+      var markers = [];
+      var bounds;
+      var map;
+      var openwindow;
       function initMap() {
-        var map = new google.maps.Map(document.getElementById('map'), {
+        map = new google.maps.Map(document.getElementById('map'), {
           zoom: 4
         });
-        var bounds = new google.maps.LatLngBounds();
-        var socket = io('wss://integracion-tarea-3.herokuapp.com', { path: '/flights' });
-        var aereopuertos = [];
-        var markers = [];
+        bounds = new google.maps.LatLngBounds();
+      }
 
+      function a() {
         //socket Airports
+        var socket = io('wss://integracion-tarea-3.herokuapp.com', { path: '/flights' });
         socket.emit('AIRPORTS');
         socket.on('AIRPORTS', function (data) {
           var aereopuertos = [];
@@ -33,51 +30,76 @@
           console.log(data);
           console.log("----");
           Object.keys(data).forEach(function(key, index) {
-            if(typeof aereopuertos[key] == "undefined") {
-              var aereopuerto = data[key];
-              console.log(key);
-              aereopuertos.push(aereopuerto);
-            }
+            var aereopuerto = data[key];
+            console.log(key);
+            aereopuertos.push(aereopuerto);
           });
           //agregando al mapa
           for (var i = 0; i < aereopuertos.length; i++) {
             console.log("codigo:");
-            console.log(aereopuertos[i].airport_code)
-            var marker = new google.maps.Marker({
-                  position: {lat: parseFloat(aereopuertos[i].airport_position[0]), lng: parseFloat(aereopuertos[i].airport_position[1])},
-                  title: aereopuertos[i].airport_code,
-                  map: map
-                });
-            bounds.extend(marker.position);
-            map.fitBounds(bounds);
-            markers.push(marker);
-
-            var info = aereopuertos[i].name + '<div> </div>' + aereopuertos[i].city + ', ' 
-                + aereopuertos[i].country + '<div> </div>' + "codigo: " + aereopuertos[i].airport_code;
-
-            marker.addListener('click', function() {
-              //if (infowindow) {
-              //  infowindow.close();
-              //}
-              var infowindow = new google.maps.InfoWindow({
-                content: info
-              });
-              console.log("ventana esp: ");
-              console.log(infowindow);
-              infowindow.open(map, marker);
-            });
+            console.log(aereopuertos[i].airport_code);
+            b(aereopuertos[i]);
           }
         });
         //termina socket airports
 
-        console.log("aereopuertos:");
-        console.log(aereopuertos);
-        console.log("cantidad aereopuertos:");
-        console.log(aereopuertos.length);
+        //socket flights
+        socket.emit('FLIGHTS');
+        socket.on('FLIGHTS', function (data) {
+          var vuelos = [];
+          data.forEach(function(element) {
+            console.log(element);
+            var destination = element["destination"]["airport_code"];
+            var vuelo = {"airline": element["airline"], "origin": element["origin"], "destination": element["destination"], "plane": element["plane"], "seats": element["seats"]};
+            vuelos.push(vuelo);
+            
+            var flightPlanCoordinates = [
+              {lat: vuelo.origin.airport_position[0], lng: vuelo.origin.airport_position[1]},
+              {lat: vuelo.destination.airport_position[0], lng: vuelo.destination.airport_position[1]}
+            ];
+            var flightPath = new google.maps.Polyline({
+              path: flightPlanCoordinates,
+              geodesic: true,
+              strokeColor: '#5555FF',
+              strokeOpacity: 1.0,
+              strokeWeight: 4
+            });
+
+            flightPath.setMap(map);
+          });
+        });
+        //termina socket flights
       }
-    </script>
-    <script async defer
-    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBvu_Ps7HdUL-KCcngd-Vo_0JW_b9pW6mk&callback=initMap">
+      function b(a) {
+        var marker = new google.maps.Marker({
+              position: {lat: parseFloat(a.airport_position[0]), lng: parseFloat(a.airport_position[1])},
+              title: a.airport_code,
+              map: map
+            });
+          console.log(marker);
+        marker.addListener('click', function(e) {
+          console.log(e);
+        });
+        bounds.extend(marker.position);
+        map.fitBounds(bounds);
+        markers.push(marker);
+        var info = a.name + '<div> </div>' + a.city + ', ' 
+            + a.country + '<div> </div>' + "codigo: " + a.airport_code;
+
+        var infowindow = new google.maps.InfoWindow({
+          content: info
+        });
+        console.log(marker);
+        marker.addListener('click', function(e) {
+          if (openwindow) {
+            openwindow.close();
+          }
+          infowindow.open(map, marker);
+          openwindow = infowindow;
+        });
+      }
+      google.maps.event.addDomListener(window, 'load', initMap);
+      a();
     </script>
   </body>
 </html>
